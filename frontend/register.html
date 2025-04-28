@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Register</title>
+    <style>
+        body {
+            background: #f0f2f5;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            font-family: Arial, sans-serif;
+        }
+        .register-form {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            width: 300px;
+        }
+        .register-form h2 {
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        .register-form input {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .register-form button {
+            width: 100%;
+            padding: 10px;
+            background: #3498db;
+            border: none;
+            color: white;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+        .register-form button:hover {
+            background: #2980b9;
+        }
+    </style>
+</head>
+<body>
+    <form class="register-form" method="POST" action="http://localhost:3000/api/auth/register">
+        <h2>Register</h2>
+        <input type="text" name="username" placeholder="Username" required />
+        <input type="password" name="password" placeholder="Password" required />
+        <input type="email" name="email" placeholder="Email" required />
+        <button type="submit">Register</button>
+    </form>
+</body>
+</html>

@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Technician Dashboard</title>
+  <style>
+    /* Base & Reset */
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { font-family: 'Segoe UI', sans-serif; background:#eef2f5; color:#333; }
+
+    /* Header */
+    header {
+      background:#005f99; color:#fff; padding:1rem; text-align:center;
+      font-size:1.5rem; font-weight:600;
+    }
+
+    /* Main Card */
+    .card {
+      max-width:1000px; margin:2rem auto; background:#fff;
+      border-radius:8px; padding:1.5rem; box-shadow:0 4px 12px rgba(0,0,0,0.1);
+    }
+    .card h1 {
+      margin-bottom:1rem; color:#005f99; text-align:center;
+    }
+
+    /* Table */
+    table {
+      width:100%; border-collapse:collapse; margin-bottom:1.5rem;
+    }
+    th, td {
+      padding:0.75rem 1rem; border-bottom:1px solid #ddd; text-align:left;
+    }
+    th { background:#005f99; color:#fff; }
+    tr:nth-child(even) { background:#f9fbfc; }
+
+    /* Update Button */
+    .btn {
+      background:#005f99; color:#fff; border:none; padding:0.5rem 1rem;
+      border-radius:5px; cursor:pointer; font-size:0.9rem;
+    }
+    .btn:hover { opacity:0.9; }
+
+    /* Modal */
+    .modal {
+      position:fixed; top:0; left:0; width:100%; height:100%;
+      background:rgba(0,0,0,0.4); display:none;
+      align-items:center; justify-content:center;
+    }
+    .modal-content {
+      background:#fff; padding:2rem; border-radius:8px;
+      width:90%; max-width:400px; position:relative;
+      box-shadow:0 6px 18px rgba(0,0,0,0.15);
+    }
+    .close {
+      position:absolute; top:10px; right:10px; font-size:1.5rem;
+      color:#888; cursor:pointer;
+    }
+    .modal-content h2 {
+      margin-bottom:1rem; color:#005f99;
+    }
+    .modal-content label {
+      display:block; margin-bottom:0.5rem; font-weight:500;
+    }
+    .modal-content select,
+    .modal-content textarea {
+      width:100%; padding:0.5rem; margin-bottom:1rem;
+      border:1px solid #ccc; border-radius:4px;
+      font-size:1rem;
+    }
+    .modal-content button {
+      background:#005f99; color:#fff; border:none;
+      padding:0.75rem 1.25rem; border-radius:5px;
+      font-size:1rem; cursor:pointer;
+    }
+    .modal-content button:hover { opacity:0.9; }
+  </style>
+</head>
+<body>
+
+  <header>Technician Dashboard</header>
+
+  <div class="card">
+    <h1>Assigned Tickets</h1>
+    <table>
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Title</th>
+          <th>Priority</th>
+          <th>Status</th>
+          <th>Last Updated</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody id="ticketTable">
+        <!-- JS will inject rows here -->
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Update Modal -->
+  <div class="modal" id="updateModal">
+    <div class="modal-content">
+      <span class="close" id="closeModal">&times;</span>
+      <h2>Update Ticket</h2>
+      <form id="updateForm">
+        <label for="status">Status</label>
+        <select id="status" name="status" required>
+          <option value="Ouvert">Open</option>
+          <option value="En cours">In Progress</option>
+          <option value="Résolu">Resolved</option>
+          <option value="Fermé">Closed</option>
+        </select>
+
+        <label for="comment">Comment</label>
+        <textarea id="comment" name="comment" rows="4" placeholder="Add comment…"></textarea>
+
+        <button type="submit">Save Changes</button>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    const ticketTable = document.getElementById('ticketTable');
+    const updateModal = document.getElementById('updateModal');
+    const closeModal = document.getElementById('closeModal');
+    const updateForm = document.getElementById('updateForm');
+    let currentTicketId = null;
+
+    // Load tickets from backend
+    async function loadTickets() {
+      try {
+        const res = await fetch('http://localhost:3000/api/technicien/tickets', {
+          credentials: 'include'
+        });
+        const tickets = await res.json();
+        ticketTable.innerHTML = tickets.map(t => `
+          <tr>
+            <td>${t.id}</td>
+            <td>${t.titre}</td>
+            <td>${t.priorite}</td>
+            <td>${t.statut}</td>
+            <td>${new Date(t.date_mise_a_jour).toLocaleString()}</td>
+            <td><button class="btn" onclick="openUpdate(${t.id}, '${t.statut.replace("'", "\\'")}')">Update</button></td>
+          </tr>
+        `).join('');
+      } catch (err) {
+        console.error('Error loading tickets:', err);
+      }
+    }
+
+    // Open modal & prefill with current status
+    function openUpdate(id, status) {
+        console.log('Opening update modal for ticket ID:', id);
+        console.log('Current status:', status);
+      currentTicketId = id;
+      document.getElementById('status').value = status;
+      document.getElementById('comment').value = '';
+      updateModal.style.display = 'flex';
+    }
+
+    // Close modal
+    closeModal.onclick = () => updateModal.style.display = 'none';
+    window.onclick = e => { if (e.target === updateModal) updateModal.style.display = 'none'; }
+
+    // Handle form submission
+    updateForm.addEventListener('submit', async e => {
+      e.preventDefault();
+      const payload = {
+        statut: updateForm.status.value,
+        commentaire: updateForm.comment.value
+      };
+      try {
+        const res = await fetch(`http://localhost:3000/api/technicien/tickets/${currentTicketId}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify(payload)
+        });
+        if (!res.ok) throw new Error(res.statusText);
+        updateModal.style.display = 'none';
+        await loadTickets();
+      } catch (err) {
+        alert('Failed to update ticket');
+        console.error(err);
+      }
+    });
+
+    // Initial load
+    loadTickets();
+  </script>
+
+</body>
+</html>
