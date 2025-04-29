@@ -19,6 +19,27 @@
   </style>
 </head>
 <body>
+
+    <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm">
+        <div class="container">
+          <a class="navbar-brand" href="#">Support IT</a>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarContent">
+            <span class="navbar-toggler-icon"></span>
+          </button>
+    
+          <div class="collapse navbar-collapse" id="navbarContent">
+            <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+              
+              <li class="nav-item"><a class="nav-link" href="/employee">Employee</a></li>
+              <li class="nav-item"><a class="nav-link" href="/technicien">Technician</a></li>
+              <li class="nav-item"><a class="nav-link active" href="/admin">Admin</a></li>
+            </ul>
+            <button id="logoutBtn" class="btn btn-outline-danger">Logout</button>
+          </div>
+        </div>
+      </nav>
+
+
   <div class="container mt-5">
     <h1 class="text-center">Admin Dashboard</h1>
     
@@ -120,6 +141,87 @@
         </div>
       </div>
     </div>
+
+    <!-- Edit User Modal -->
+    <div class="modal fade" id="editUserModal" tabindex="-1" aria-labelledby="editUserModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="editUserModalLabel">Edit User</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="editUserForm">
+                        <div class="mb-3">
+                            <label for="editUserName" class="form-label">Name</label>
+                            <input type="text" class="form-control" id="editUserName" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="editUserEmail" class="form-label">Email</label>
+                            <input type="email" class="form-control" id="editUserEmail" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="editUserRole" class="form-label">Role</label>
+                            <select class="form-control" id="editUserRole" required>
+                                <option value="Employé">Employee</option>
+                                <option value="Technicien">Technician</option>
+                                <option value="Admin">Admin</option>
+                            </select>
+                        </div>
+                        <input type="hidden" id="editUserId">
+                        <button type="submit" class="btn btn-primary">Save Changes</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div class="modal fade" id="deleteUserModal" tabindex="-1" aria-labelledby="deleteUserModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="deleteUserModalLabel">Confirm Deletion</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    Are you sure you want to delete this user?
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-danger" id="confirmDeleteBtn">Delete</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Assign Technician Modal -->
+    <div class="modal fade" id="assignTechnicianModal" tabindex="-1" aria-labelledby="assignTechnicianModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="assignTechnicianModalLabel">Assign Technician</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="assignTechnicianForm">
+                        <div class="mb-3">
+                            <label for="technicianSelect" class="form-label">Select Technician</label>
+                            <select class="form-control" id="technicianSelect" required>
+                                <!-- Technician options will be populated dynamically -->
+                            </select>
+                        </div>
+                        <input type="hidden" id="assignTicketId">
+                        <button type="submit" class="btn btn-primary">Assign</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    
+    
+
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
@@ -130,6 +232,142 @@
       fetchUsers();
       fetchTickets();
     };
+
+
+
+    function showEditUser(userId) {
+      // Logic to edit user
+    // Retrieve user data directly from the table row
+    console.log(userId);
+    const editUserModal = new bootstrap.Modal(document.getElementById('editUserModal'));
+    const user = fetch(`http://localhost:3000/api/admin/users/${userId}`, {
+        credentials: 'include'
+      })
+      .then(response => response.json())
+      .then(user => {
+        document.getElementById('editUserName').value = user.nom;
+        document.getElementById('editUserEmail').value = user.email;
+        document.getElementById('editUserRole').value = user.role;
+        document.getElementById('editUserId').value = user.id;
+        editUserModal.show();
+      });
+
+      
+      }
+    
+    const editUserForm = document.getElementById('editUserForm');
+    editUserForm.addEventListener('submit', function(event) {
+        event.preventDefault();
+        const userId = document.getElementById('editUserId').value;
+        const nom = document.getElementById('editUserName').value;
+        const email = document.getElementById('editUserEmail').value;
+        const role = document.getElementById('editUserRole').value;
+
+        fetch(`http://localhost:3000/api/admin/users/${userId}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ nom, email, role }),
+            credentials: 'include'
+        })
+        .then(response => {
+            if (!response.ok) {
+                alert('Failed to update user');
+                return;
+            }
+            fetchUsers(); // Refresh the user list
+            editUserForm.reset(); // Reset the form
+            const editUserModal = bootstrap.Modal.getInstance(document.getElementById('editUserModal'));
+            editUserModal.hide(); // Hide the modal
+        });
+    });
+
+    function showDeleteModal(userId) {
+        // Show the delete confirmation modal
+        const deleteUserModal = new bootstrap.Modal(document.getElementById('deleteUserModal'));
+        document.getElementById('deleteUserModalLabel').textContent = `Confirm Deletion (User ID: ${userId})`;
+        // Set the onclick event for the delete button
+        document.getElementById('confirmDeleteBtn').onclick = function() {
+            deleteUser(userId);
+            deleteUserModal.hide();
+        };
+        deleteUserModal.show();
+    }
+
+
+
+    function deleteUser(userId) {
+
+        
+        
+
+        
+      // Logic to delete user
+      fetch(`http://localhost:3000/api/admin/users/${userId}`, {
+        method: 'DELETE',
+        credentials: 'include'
+      })
+      .then(response => {response.json();
+        console.log(response);
+        if (!response.ok) {
+          alert('Failed to delete user');
+          
+        }
+        else
+        {
+         
+          fetchUsers(); // Refresh the user list}
+
+        }
+      });
+      
+      
+    }
+
+    function assignTechnician(ticketId) {
+            const assignTechnicianModal = new bootstrap.Modal(document.getElementById('assignTechnicianModal'));
+            document.getElementById('assignTicketId').value = ticketId;
+
+            // Fetch available technicians
+            fetch('http://localhost:3000/api/admin/technicians', {
+                credentials: 'include'
+            })
+                .then(response => response.json())
+                .then(data => {
+                    const technicianSelect = document.getElementById('technicianSelect');
+                    technicianSelect.innerHTML = '';
+                    data.forEach(technician => {
+                        const option = document.createElement('option');
+                        option.value = technician.id;
+                        option.textContent = technician.nom;
+                        technicianSelect.appendChild(option);
+                    });
+                    assignTechnicianModal.show();
+                });
+        }
+
+        document.getElementById('assignTechnicianForm').addEventListener('submit', function(event) {
+            event.preventDefault();
+            const ticketId = document.getElementById('assignTicketId').value;
+            const technicianId = document.getElementById('technicianSelect').value;
+            console.log(ticketId);
+            console.log(technicianId);
+            fetch(`http://localhost:3000/api/admin/tickets/${ticketId}/assign`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ technicianId }),
+                credentials: 'include'
+            })
+                .then(response => {
+                    if (!response.ok) {
+                        alert('Failed to assign technician');
+                        return;
+                    }
+                    fetchTickets(); // Refresh the ticket list
+                    const assignTechnicianModal = bootstrap.Modal.getInstance(document.getElementById('assignTechnicianModal'));
+                    assignTechnicianModal.hide(); // Hide the modal
+                });
+        });
+
 
     // Fetch statistics from the backend
     function fetchStats() {
@@ -158,7 +396,10 @@
                         <td>${user.nom}</td>
                         <td>${user.email}</td>
                         <td>${user.role}</td>
-                        <td><button class="btn btn-info" onclick="editUser(${user.id})">Edit</button></td>
+                        <td>
+                          <button class="btn btn-info" onclick="showEditUser(${user.id})">Edit ${user.id}</button>
+                          <button class="btn btn-danger" onclick="showDeleteModal(${user.id})">Delete</button>
+                        </td>
                       </tr>`;
             userTable.innerHTML += row;
           });
@@ -177,14 +418,31 @@
           let ticketTable = document.getElementById('ticketList');
           ticketTable.innerHTML = '';
           data.forEach(ticket => {
-            let row = `<tr>
-                        <td>${ticket.id}</td>
-                        <td>${ticket.titre}</td>
-                        <td>${ticket.statut}</td>
-                        <td>${ticket.technicien || 'None'}</td>
-                        <td><button class="btn btn-success" onclick="assignTechnician(${ticket.id})">Assign</button></td>
-                      </tr>`;
-            ticketTable.innerHTML += row;
+            // Check if the ticket has a technician assigned
+            if(ticket.id_technicien != null && ticket.id_technicien != undefined && ticket.id_technicien != 0) {
+                fetch(`http://localhost:3000/api/admin/users/${ticket.id_technicien}`, {
+                    credentials: 'include'
+                }).then(response => response.json())
+                    .then(technician => {
+                        let row = `<tr>
+                                    <td>${ticket.id}</td>
+                                    <td>${ticket.titre}</td>
+                                    <td>${ticket.statut}</td>
+                                    <td>${technician.nom || 'None'}</td>
+                                    <td><button class="btn btn-success" onclick="assignTechnician(${ticket.id})">Assign</button></td>
+                                  </tr>`;
+                        ticketTable.innerHTML += row;
+                    });
+            } else {
+                let row = `<tr>
+                            <td>${ticket.id}</td>
+                            <td>${ticket.titre}</td>
+                            <td>${ticket.statut}</td>
+                            <td>None</td>
+                            <td><button class="btn btn-success" onclick="assignTechnician(${ticket.id})">Assign</button></td>
+                          </tr>`;
+                ticketTable.innerHTML += row;
+            }
           });
         });
     }
@@ -204,13 +462,25 @@
         credentials: 'include'
 
       })
-      .then(response => response.json())
-      .then(data => {
-        if (data.success) {
-          alert('User added successfully!');
-          fetchUsers(); // Refresh the user list
+      .then(response => {
+        if (!response.ok) {
+          alert('Failed to add user');
+          return;
         }
-      });
+        fetchUsers(); // Refresh the user list
+        document.getElementById('addUserForm').reset(); // Reset the form
+        const addUserModal = bootstrap.Modal.getInstance(document.getElementById('addUserModal'));
+        addUserModal.hide(); // Hide the modal
+
+        
+      })
+      
+    });
+
+    // Handle the logout button
+    document.getElementById('logoutBtn').addEventListener('click', function() {
+    document.cookie = "auth-cookie=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+    window.location.href = '/';
     });
   </script>
 </body>
