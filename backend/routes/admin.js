@@ -9,7 +9,7 @@ const bcrypt = require('bcrypt');
 router.get('/tickets', (req, res) => {
     const userId = req.user.id; // Assuming req.user is set by your authentication middleware
     console.log(userId);
-    db.all('SELECT * FROM tickets WHERE id_employe = ?', [userId], (err, rows) => {
+    db.all('SELECT * FROM tickets', (err, rows) => {
         if (err) {
             console.error(err);
             return res.status(500).json({ error: 'Database error' });
