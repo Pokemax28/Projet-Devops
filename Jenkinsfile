@@ -42,7 +42,7 @@ pipeline {
                 script {
                     // Run Docker Compose to deploy
                     echo 'Deploying containers...'
-                    bat 'docker-compose up -d --build --remove-orphans'
+                    bat 'docker-compose -f docker-compose.prod.yaml up -d --build --remove-orphans'
                 }
             }
         }

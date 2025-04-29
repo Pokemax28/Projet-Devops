@@ -1,0 +1,36 @@
+version: '3.8'
+
+services:
+  frontend:
+    build:
+      context: ./frontend
+    ports:
+      - "80:80"
+    networks:
+      - support_net
+    depends_on:
+      - backend
+    volumes:
+      - ./frontend:/usr/share/nginx/html      # Mount static frontend files
+      - ./frontend/nginx.conf:/etc/nginx/nginx.conf  # Mount nginx.conf into the container
+
+  backend:
+    build:
+      context: ./backend
+    ports:
+      - "3000:3000"
+    networks:
+      - support_net
+    environment:
+      - NODE_ENV=production
+      - JWT_SECRET=supersecret123
+    volumes:
+      - ./backend:/app
+      - ./backend/database:/app/database
+      - /app/node_modules
+    command: npm run dev 
+    
+
+networks:
+  support_net:
+    driver: bridge
